@@ -604,3 +604,36 @@ func encodeID(id uint64) ([]byte, error) {
 	}
 	return idEncoded, nil
 }
+
+func adaptSnapshot(info snapshots.Info) filters.Adaptor {
+	return filters.AdapterFunc(func(fieldpath []string) (string, bool) {
+		if len(fieldpath) == 0 {
+			return "", false
+		}
+
+		switch fieldpath[0] {
+		case "kind":
+			switch info.Kind {
+			case snapshots.KindActive:
+				return "active", true
+			case snapshots.KindView:
+				return "view", true
+			case snapshots.KindCommitted:
+				return "committed", true
+			}
+		case "name":
+			return info.Name, true
+		case "parent":
+			return info.Parent, true
+		case "labels":
+			if len(info.Labels) == 0 {
+				return "", false
+			}
+
+			v, ok := info.Labels[strings.Join(fieldpath[1:], ".")]
+			return v, ok
+		}
+
+		return "", false
+	})
+}

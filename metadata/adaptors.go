@@ -139,6 +139,34 @@ func adaptLease(lease leases.Lease) filters.Adaptor {
 	})
 }
 
+func adaptSnapshot(info snapshots.Info) filters.Adaptor {
+	return filters.AdapterFunc(func(fieldpath []string) (string, bool) {
+		if len(fieldpath) == 0 {
+			return "", false
+		}
+
+		switch fieldpath[0] {
+		case "kind":
+			switch info.Kind {
+			case snapshots.KindActive:
+				return "active", true
+			case snapshots.KindView:
+				return "view", true
+			case snapshots.KindCommitted:
+				return "committed", true
+			}
+		case "name":
+			return info.Name, true
+		case "parent":
+			return info.Parent, true
+		case "labels":
+			return checkMap(fieldpath[1:], info.Labels)
+		}
+
+		return "", false
+	})
+}
+
 func checkMap(fieldpath []string, m map[string]string) (string, bool) {
 	if len(m) == 0 {
 		return "", false
